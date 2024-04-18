@@ -1,0 +1,236 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+        <meta charset="utf-8" />
+        <script src="{{ url_for('static', filename='jquery-3.7.0.min.js') }}"></script>
+    </head>
+ 
+    <style>
+        html, body {
+            height: 100%;
+        }
+        #touchpad {
+            width: 100%;
+            height: 60%;
+            background-color:lightskyblue;
+            margin-top: 10px;
+        }
+        #scroll_btn {
+            width: 40%;
+            height: 80px;
+            background-color:coral;
+            float: left;
+            text-align: center;
+            font-size: larger;
+            margin-bottom: 10px;
+        }
+        #drag_btn {
+            width: 30%;
+            height: 60px;
+            background-color:rgb(177, 114, 195);
+            float: left;
+            text-align: center;
+            font-size: larger;
+            margin-bottom: 10px;
+            margin-top:10px;
+            margin-right: 10px;
+        }
+        #right_btn {
+            width: 40%;
+            height: 80px;
+            background-color:aquamarine;
+            float: right;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: larger;
+        }
+        #line_edit {
+            width: 50%;
+            height: 60px;
+            font-size: larger;
+            margin-right: 10px;
+        }
+        #commit_btn {
+            width: 20%;
+            height: 60px;
+            background-color: rgb(50, 106, 152);
+            font-size: larger;
+            margin-right: 10px;
+        }
+        #delete_btn {
+            width: 20%;
+            height: 60px;
+            background-color: rgb(193, 193, 193);
+            font-size: larger;
+        }
+        #enter_btn {
+            width: 25%;
+            height: 60px;
+            background-color:lightgreen;
+            font-size: larger;
+            margin-right: 20px;
+            margin-top: 10px;
+        }
+        #quit_btn {
+            width: 30%;
+            height: 60px;
+            background-color:bisque;
+            font-size: larger;
+            margin-top: 10px;
+        }
+
+    </style>
+    <body>
+        <div id="scroll_btn">按住滚动</div>
+        <div id="right_btn">右键</div>
+        <input id="line_edit" />
+        <button id="commit_btn" text="发送">发送</button>
+        <button id="delete_btn" text="删除">删除</button>
+        <div id="drag_btn">按住拖动</div>
+        <button id="enter_btn" text="确定">确定</button>
+        <button id="quit_btn" text="退出">退出</button>
+        <div id="touchpad"></div>
+        <div>v1.3</div>
+
+    </body>
+    <script>
+        var last_x = -1, last_y = -1, last_t = -1;
+        var begin_x = -1, begin_y = -1, begin_t = -1;
+        var scroll_btn_down = 0;
+        var last_quit_click_time = 0;
+        var last_move_time = 0;
+        function report_touch_move(dx, dy, time) {
+            jQuery.post("report_move",
+                {dx: dx, dy: dy, time: time},
+                function(data){
+                //console.log("report finish: "+data);
+            });
+        }
+        function report_scroll_move(dx, dy, time) {
+            jQuery.post("report_scroll",
+                {dx: dx, dy: dy, time: time},
+                function(data){
+                //console.log("report finish: "+data);
+            });
+        }
+        function on_touch_move(event) {
+            if (event.targetTouches.length == 1) {
+                event.preventDefault();// 阻止浏览器默认事件，重要 
+                var touch = event.targetTouches[0];
+                var x = touch.screenX;
+                var y = touch.screenY;
+                var t = new Date().getTime();
+                if (t - last_t < 50) {
+                    return;
+                }
+                if (last_x == -1 && last_y == -1) {
+                } else {
+                    if (scroll_btn_down==1){
+                        report_scroll_move(x-last_x, y-last_y, (t-last_t)/1000.0);
+                    } else {
+                        report_touch_move(x-last_x, y-last_y, (t-last_t)/1000.0);
+                    }
+                }
+                last_x = x;
+                last_y = y;
+                last_t = t;
+            } 
+        }
+        function on_touch_end(event) {
+            console.log("touch end");
+            if (last_x == -1 && last_y == -1 || Math.abs(last_x - begin_x) < 5 && Math.abs(last_y - begin_y) < 5) {
+                console.log("2");
+                event.preventDefault();// 阻止浏览器默认事件，重要 
+                var t = new Date().getTime();
+                console.log(""+t);
+                if (t - begin_t < 500){
+                    console.log("tap");
+                    jQuery.post("report_tap");
+                }
+            }
+            last_x = -1;
+            last_y = -1;
+            last_t = -1;
+        }
+        function on_touch_start(event) {
+            console.log("touch start");
+            if (event.targetTouches.length == 1) {
+                console.log("1");
+                event.preventDefault();// 阻止浏览器默认事件，重要 
+                var touch = event.targetTouches[0];
+                begin_x = touch.screenX;
+                begin_y = touch.screenY;
+                begin_t = new Date().getTime();
+                console.log(""+begin_x+","+begin_y+","+begin_t);
+            }
+        }
+        var touchpad = document.getElementById("touchpad");
+        touchpad.addEventListener('touchmove', on_touch_move, false);
+        touchpad.addEventListener('touchend', on_touch_end, false);
+        touchpad.addEventListener('touchstart', on_touch_start, false);
+
+        var scroll_btn = document.getElementById("scroll_btn");
+        scroll_btn.addEventListener('touchstart', function(event){
+            event.preventDefault();// 阻止浏览器默认事件，重要 
+            scroll_btn_down = 1;
+            var bd = document.getElementsByTagName('body');
+            bd[0].style.backgroundColor='coral';
+        }, false);
+
+        scroll_btn.addEventListener('touchend', function(event){
+            event.preventDefault();// 阻止浏览器默认事件，重要 
+            scroll_btn_down = 0;
+            var bd = document.getElementsByTagName('body');
+            bd[0].style.backgroundColor='white';
+        }, false);
+
+        var drag_btn = document.getElementById("drag_btn");
+        drag_btn.addEventListener('touchstart', function(event){
+            event.preventDefault();// 阻止浏览器默认事件，重要 
+            jQuery.post("report_left_down");
+            var bd = document.getElementsByTagName('body');
+            bd[0].style.backgroundColor='rgb(177, 114, 195)';
+        }, false);
+
+        drag_btn.addEventListener('touchend', function(event){
+            event.preventDefault();// 阻止浏览器默认事件，重要 
+            jQuery.post("report_left_up");
+            var bd = document.getElementsByTagName('body');
+            bd[0].style.backgroundColor='white';
+        }, false);
+
+        var right_btn = document.getElementById("right_btn");
+        right_btn.addEventListener('touchstart', function(event){
+            event.preventDefault();// 阻止浏览器默认事件，重要 
+        }, false);
+
+        right_btn.addEventListener('touchend', function(event){
+            event.preventDefault();// 阻止浏览器默认事件，重要 
+            jQuery.post("report_right_click");
+        }, false);
+
+        $('#commit_btn').bind('click', function(){
+            var text = $('#line_edit').val();
+            $('#line_edit').val('');
+            jQuery.post("report_text",
+                {text: text},
+                function(data){
+                //console.log("report finish: "+data);
+            });
+        });
+        $('#delete_btn').bind('click', function(){
+            jQuery.post("report_delete");
+        });
+        $('#enter_btn').bind('click', function(){
+            jQuery.post("report_enter");
+        });
+        $('#quit_btn').bind('click', function(){
+            var click_time = new Date().getTime();
+            //if (click_time - last_quit_click_time < 400) {
+                jQuery.post("report_quit");
+            //}
+            last_quit_click_time = click_time;
+        });
+
+    </script>
+</html>
