@@ -3,7 +3,12 @@ from flask import request, make_response
 from flask import jsonify
 import pyautogui as pg
 import pyperclip
+import subprocess
+from IPTVChannel import *
 app = Flask(__name__)
+
+iptv_channel = IPTVChannel()
+g_m3u8 = []
 
 def response_code_0():
     code = {"code": 0}
@@ -13,8 +18,61 @@ def response_code_0():
     
 @app.route('/')
 def hello():
+    return render_template('index.html')
+
+@app.route('/mouse')
+def mouse():
     return render_template('mouse.html')
-    return 'Welcome to My Watchlist!'
+
+@app.route('/iptv')
+def iptv():
+    return render_template('iptv.html')
+
+@app.route('/iptv_control')
+def iptv_control():
+    subprocess.Popen(['google-chrome', 'http://localhost:5000/iptv'])
+    iptv_channel.getChannels('http://192.168.1.110/media/IPTV-URL/IPTV-fix.m3u')
+    if len(iptv_channel.channels) == 0:
+        return "channel empty"
+    return render_template('iptv_control.html', channels=iptv_channel.channels)
+
+@app.route('/get_m3u8')
+def get_m3u8():
+    result = ""
+    if len(g_m3u8) > 0:
+        result = g_m3u8[-1]
+        g_m3u8.clear()
+        
+    return result
+
+@app.route("/prev_channel", methods=['POST'])
+def prev_channel():
+    url = iptv_channel.prev()
+    g_m3u8.append(url)
+    return response_code_0()
+
+@app.route("/next_channel", methods=['POST'])
+def next_channel():
+    url = iptv_channel.next()
+    g_m3u8.append(url)
+    return response_code_0()
+
+@app.route("/auto_play", methods=['POST'])
+def auto_play():
+    pg.click(500,500, button="left")
+    return response_code_0()
+
+@app.route("/full_screen", methods=['POST'])
+def full_screen():
+    pg.doubleClick(500, 500)
+    return response_code_0()
+
+@app.route("/set_channel", methods=['POST'])
+def set_channel():
+    value = eval(request.form.get('value'))
+    print("value=",value)
+    g_m3u8.append(iptv_channel.channels[value].url)
+    return response_code_0()
 
 @app.route('/report_scroll', methods=['POST'])
 def report_scroll():

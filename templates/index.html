@@ -1,0 +1,47 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width,height=device-height,inital-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+        <meta charset="utf-8" />
+        <script src="{{ url_for('static', filename='jquery-3.7.0.min.js') }}"></script>
+    </head>
+ 
+    <style>
+        html, body {
+            height: 100%;
+        }
+        #iptv {
+            width: 100%;
+            height: 40%;
+            background-color:lightskyblue;
+            font-size: larger;
+            margin-top: 10px;
+        }
+        #mouse {
+            width: 100%;
+            height: 40%;
+            background-color:coral;
+            font-size: larger;
+            margin-top: 10px;
+        }
+   </style>
+    <body>
+        <button id="iptv" text="直播">直播</button>
+        <button id="mouse" text="点播">点播</button>
+        <div>v1.0</div>
+
+    </body>
+    <script>
+        $('#mouse').bind('click', function(){
+            jQuery.get("mouse",
+                function(data){
+                    document.write(data);
+            });
+        });
+        $('#iptv').bind('click', function(){
+            jQuery.get("iptv_control",
+                function(data){
+                    document.write(data);
+            });
+        });
+    </script>
+</html>
