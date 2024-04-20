@@ -72,12 +72,6 @@
 	        {value: idx},
 		function(data){});
 	}
-	function auto_play() {
-	    jQuery.post("auto_play");
-	}
-	function full_screen() {
-	    jQuery.post("full_screen");
-	}
         $('#play_pause').bind('click', function(){
             jQuery.post("auto_play");
         });
@@ -93,7 +87,5 @@
         $('#quit').bind('click', function(){
             jQuery.post("report_quit");
         });
-	setTimeout(auto_play, 2000);
-	setTimeout(full_screen, 4000);
     </script>
 </html>

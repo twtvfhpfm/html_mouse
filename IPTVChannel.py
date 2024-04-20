@@ -47,4 +47,9 @@ class IPTVChannel:
         self.cursor = idx
         return self.channels[self.cursor].url
 
+    def last(self):
+        if self.cursor >= len(self.channels):
+            self.cursor = 0
+        return self.channels[self.cursor].url
+
 

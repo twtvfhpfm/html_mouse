@@ -8,6 +8,7 @@ from IPTVChannel import *
 app = Flask(__name__)
 
 iptv_channel = IPTVChannel()
+last_channel_idx = 0
 g_m3u8 = []
 
 def response_code_0():
@@ -26,11 +27,11 @@ def mouse():
 
 @app.route('/iptv')
 def iptv():
-    return render_template('iptv.html')
+    return render_template('iptv.html', url=iptv_channel.last())
 
 @app.route('/iptv_control')
 def iptv_control():
-    subprocess.Popen(['google-chrome', 'http://localhost:5000/iptv'])
+    subprocess.Popen(['chrome', 'http://localhost:5000/iptv'])
     iptv_channel.getChannels('http://192.168.1.110/media/IPTV-URL/IPTV-fix.m3u')
     if len(iptv_channel.channels) == 0:
         return "channel empty"
@@ -71,7 +72,8 @@ def full_screen():
 def set_channel():
     value = eval(request.form.get('value'))
     print("value=",value)
-    g_m3u8.append(iptv_channel.channels[value].url)
+    url = iptv_channel.get(value)
+    g_m3u8.append(url)
     return response_code_0()
 
 @app.route('/report_scroll', methods=['POST'])
